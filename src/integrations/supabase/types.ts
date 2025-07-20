@@ -14,7 +14,86 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          created_at: string
+          department: string
+          full_name: string
+          id: string
+          phone: string | null
+          role: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          department: string
+          full_name: string
+          id?: string
+          phone?: string | null
+          role?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          department?: string
+          full_name?: string
+          id?: string
+          phone?: string | null
+          role?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      supervisors: {
+        Row: {
+          created_at: string
+          id: string
+          max_assignments: number | null
+          max_daily_assignments: number | null
+          profile_id: string
+          specializations: string[] | null
+          status: string
+          total_assignments: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          max_assignments?: number | null
+          max_daily_assignments?: number | null
+          profile_id: string
+          specializations?: string[] | null
+          status?: string
+          total_assignments?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          max_assignments?: number | null
+          max_daily_assignments?: number | null
+          profile_id?: string
+          specializations?: string[] | null
+          status?: string
+          total_assignments?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supervisors_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
