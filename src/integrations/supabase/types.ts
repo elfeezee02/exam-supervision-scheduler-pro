@@ -14,6 +14,65 @@ export type Database = {
   }
   public: {
     Tables: {
+      exams: {
+        Row: {
+          course_code: string
+          course_name: string
+          created_at: string
+          date: string
+          department: string | null
+          duration: number | null
+          end_time: string
+          expected_students: number | null
+          id: string
+          start_time: string
+          status: string
+          supervisors_needed: number
+          updated_at: string
+          venue_id: string | null
+        }
+        Insert: {
+          course_code: string
+          course_name: string
+          created_at?: string
+          date: string
+          department?: string | null
+          duration?: number | null
+          end_time: string
+          expected_students?: number | null
+          id?: string
+          start_time: string
+          status?: string
+          supervisors_needed?: number
+          updated_at?: string
+          venue_id?: string | null
+        }
+        Update: {
+          course_code?: string
+          course_name?: string
+          created_at?: string
+          date?: string
+          department?: string | null
+          duration?: number | null
+          end_time?: string
+          expected_students?: number | null
+          id?: string
+          start_time?: string
+          status?: string
+          supervisors_needed?: number
+          updated_at?: string
+          venue_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_exams_venue"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -46,6 +105,60 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      schedules: {
+        Row: {
+          assigned_at: string
+          created_at: string
+          exam_id: string
+          id: string
+          is_main_supervisor: boolean
+          notes: string | null
+          notification_sent: boolean
+          status: string
+          supervisor_id: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_at?: string
+          created_at?: string
+          exam_id: string
+          id?: string
+          is_main_supervisor?: boolean
+          notes?: string | null
+          notification_sent?: boolean
+          status?: string
+          supervisor_id: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_at?: string
+          created_at?: string
+          exam_id?: string
+          id?: string
+          is_main_supervisor?: boolean
+          notes?: string | null
+          notification_sent?: boolean
+          status?: string
+          supervisor_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schedules_exam_id_fkey"
+            columns: ["exam_id"]
+            isOneToOne: false
+            referencedRelation: "exams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "schedules_supervisor_id_fkey"
+            columns: ["supervisor_id"]
+            isOneToOne: false
+            referencedRelation: "supervisors"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       supervisors: {
         Row: {
@@ -93,6 +206,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      venues: {
+        Row: {
+          building: string
+          capacity: number
+          created_at: string
+          equipment: string | null
+          facilities: string[] | null
+          floor: string | null
+          id: string
+          is_active: boolean
+          location: string
+          name: string
+          status: string
+          type: string | null
+          updated_at: string
+        }
+        Insert: {
+          building: string
+          capacity: number
+          created_at?: string
+          equipment?: string | null
+          facilities?: string[] | null
+          floor?: string | null
+          id?: string
+          is_active?: boolean
+          location: string
+          name: string
+          status?: string
+          type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          building?: string
+          capacity?: number
+          created_at?: string
+          equipment?: string | null
+          facilities?: string[] | null
+          floor?: string | null
+          id?: string
+          is_active?: boolean
+          location?: string
+          name?: string
+          status?: string
+          type?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
     }
     Views: {

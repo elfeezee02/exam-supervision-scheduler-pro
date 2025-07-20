@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useESSS } from '@/context/ESSContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,27 +9,29 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Badge } from '@/components/ui/badge';
 import { Plus, Edit, Trash2, Calendar, Clock, MapPin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Exam } from '@/types';
+import { useExams, Exam } from '@/hooks/useExams';
+import { useVenues } from '@/hooks/useVenues';
 
 const Exams = () => {
-  const { exams, venues, addExam, updateExam, deleteExam } = useESSS();
+  const { exams, createExam, updateExam, deleteExam, loading: examsLoading } = useExams();
+  const { venues, loading: venuesLoading } = useVenues();
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingExam, setEditingExam] = useState<Exam | null>(null);
   const [formData, setFormData] = useState({
-    courseCode: '',
-    courseName: '',
+    course_code: '',
+    course_name: '',
     date: '',
-    startTime: '',
-    endTime: '',
-    venueId: '',
-    supervisorsNeeded: 2
+    start_time: '',
+    end_time: '',
+    venue_id: '',
+    supervisors_needed: 2
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.courseCode || !formData.courseName || !formData.date || !formData.startTime || !formData.endTime || !formData.venueId) {
+    if (!formData.course_code || !formData.course_name || !formData.date || !formData.start_time || !formData.end_time || !formData.venue_id) {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
@@ -39,61 +40,55 @@ const Exams = () => {
       return;
     }
 
-    const examData = {
-      ...formData,
-      supervisorsNeeded: Number(formData.supervisorsNeeded)
-    };
+    try {
+      if (editingExam) {
+        await updateExam(editingExam.id, {
+          ...formData,
+          status: 'scheduled'
+        });
+      } else {
+        await createExam({
+          ...formData,
+          status: 'scheduled'
+        });
+      }
 
-    if (editingExam) {
-      updateExam(editingExam.id, examData);
-      toast({
-        title: "Success",
-        description: "Exam updated successfully"
+      setIsDialogOpen(false);
+      setEditingExam(null);
+      setFormData({
+        course_code: '',
+        course_name: '',
+        date: '',
+        start_time: '',
+        end_time: '',
+        venue_id: '',
+        supervisors_needed: 2
       });
-    } else {
-      addExam(examData);
-      toast({
-        title: "Success",
-        description: "Exam created successfully"
-      });
+    } catch (error) {
+      console.error('Error saving exam:', error);
     }
-
-    setIsDialogOpen(false);
-    setEditingExam(null);
-    setFormData({
-      courseCode: '',
-      courseName: '',
-      date: '',
-      startTime: '',
-      endTime: '',
-      venueId: '',
-      supervisorsNeeded: 2
-    });
   };
 
   const handleEdit = (exam: Exam) => {
     setEditingExam(exam);
     setFormData({
-      courseCode: exam.courseCode,
-      courseName: exam.courseName,
+      course_code: exam.course_code,
+      course_name: exam.course_name,
       date: exam.date,
-      startTime: exam.startTime,
-      endTime: exam.endTime,
-      venueId: exam.venueId,
-      supervisorsNeeded: exam.supervisorsNeeded
+      start_time: exam.start_time,
+      end_time: exam.end_time,
+      venue_id: exam.venue_id || '',
+      supervisors_needed: exam.supervisors_needed
     });
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (examId: string) => {
-    deleteExam(examId);
-    toast({
-      title: "Success",
-      description: "Exam deleted successfully"
-    });
+  const handleDelete = async (examId: string) => {
+    await deleteExam(examId);
   };
 
-  const getVenueName = (venueId: string) => {
+  const getVenueName = (venueId?: string) => {
+    if (!venueId) return 'No Venue';
     const venue = venues.find(v => v.id === venueId);
     return venue ? venue.name : 'Unknown Venue';
   };
@@ -126,8 +121,8 @@ const Exams = () => {
                   <Label htmlFor="courseCode">Course Code *</Label>
                   <Input
                     id="courseCode"
-                    value={formData.courseCode}
-                    onChange={(e) => setFormData({ ...formData, courseCode: e.target.value })}
+                    value={formData.course_code}
+                    onChange={(e) => setFormData({ ...formData, course_code: e.target.value })}
                     placeholder="e.g., CS101"
                   />
                 </div>
@@ -135,8 +130,8 @@ const Exams = () => {
                   <Label htmlFor="courseName">Course Name *</Label>
                   <Input
                     id="courseName"
-                    value={formData.courseName}
-                    onChange={(e) => setFormData({ ...formData, courseName: e.target.value })}
+                    value={formData.course_name}
+                    onChange={(e) => setFormData({ ...formData, course_name: e.target.value })}
                     placeholder="e.g., Introduction to Computer Science"
                   />
                 </div>
@@ -158,8 +153,8 @@ const Exams = () => {
                   <Input
                     id="startTime"
                     type="time"
-                    value={formData.startTime}
-                    onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+                    value={formData.start_time}
+                    onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
                   />
                 </div>
                 <div>
@@ -167,15 +162,15 @@ const Exams = () => {
                   <Input
                     id="endTime"
                     type="time"
-                    value={formData.endTime}
-                    onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+                    value={formData.end_time}
+                    onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
                   />
                 </div>
               </div>
               
               <div>
                 <Label htmlFor="venue">Venue *</Label>
-                <Select value={formData.venueId} onValueChange={(value) => setFormData({ ...formData, venueId: value })}>
+                <Select value={formData.venue_id} onValueChange={(value) => setFormData({ ...formData, venue_id: value })}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a venue" />
                   </SelectTrigger>
@@ -196,8 +191,8 @@ const Exams = () => {
                   type="number"
                   min="1"
                   max="10"
-                  value={formData.supervisorsNeeded}
-                  onChange={(e) => setFormData({ ...formData, supervisorsNeeded: Number(e.target.value) })}
+                  value={formData.supervisors_needed}
+                  onChange={(e) => setFormData({ ...formData, supervisors_needed: Number(e.target.value) })}
                 />
               </div>
               
@@ -237,12 +232,16 @@ const Exams = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {exams.map((exam) => (
+              {examsLoading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center">Loading exams...</TableCell>
+                </TableRow>
+              ) : exams.map((exam) => (
                 <TableRow key={exam.id}>
                   <TableCell>
                     <div>
-                      <p className="font-medium">{exam.courseCode}</p>
-                      <p className="text-sm text-muted-foreground">{exam.courseName}</p>
+                      <p className="font-medium">{exam.course_code}</p>
+                      <p className="text-sm text-muted-foreground">{exam.course_name}</p>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -253,23 +252,23 @@ const Exams = () => {
                     <div className="flex items-center gap-2 mt-1">
                       <Clock className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm text-muted-foreground">
-                        {exam.startTime} - {exam.endTime}
+                        {exam.start_time} - {exam.end_time}
                       </span>
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <span>{getVenueName(exam.venueId)}</span>
+                      <span>{getVenueName(exam.venue_id)}</span>
                     </div>
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline">
-                      {exam.supervisorsNeeded} needed
+                      {exam.supervisors_needed} needed
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="secondary">Scheduled</Badge>
+                    <Badge variant="secondary">{exam.status}</Badge>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
