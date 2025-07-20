@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 const Schedules = () => {
   const { exams, supervisors, venues, schedules, generateSchedule } = useESSS();
   const { toast } = useToast();
-  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedDate, setSelectedDate] = useState('all');
   const [isGenerating, setIsGenerating] = useState(false);
 
   const handleGenerateSchedule = async () => {
@@ -43,7 +43,7 @@ const Schedules = () => {
     return name.split(' ').map(word => word.charAt(0)).join('').toUpperCase();
   };
 
-  const filteredSchedules = selectedDate 
+  const filteredSchedules = selectedDate && selectedDate !== 'all'
     ? schedules.filter(schedule => {
         const exam = getExam(schedule.examId);
         return exam?.date === selectedDate;
@@ -142,7 +142,7 @@ const Schedules = () => {
                   <SelectValue placeholder="Filter by date" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All dates</SelectItem>
+                  <SelectItem value="all">All dates</SelectItem>
                   {uniqueDates.map((date) => (
                     <SelectItem key={date} value={date}>
                       {new Date(date).toLocaleDateString()}
