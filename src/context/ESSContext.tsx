@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, Supervisor, Exam, Venue, Availability, SupervisionSchedule, DashboardStats, ActivityLog, SchedulingConflict } from '@/types';
+import { User, Supervisor, Exam, Venue, Availability, SupervisionSchedule, Schedule, DashboardStats, ActivityLog, SchedulingConflict } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 
 interface ESSContextType {
@@ -18,11 +18,16 @@ interface ESSContextType {
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
   register: (userData: Partial<User>) => Promise<boolean>;
-  createExam: (exam: Partial<Exam>) => Promise<string>;
+  addExam: (exam: Partial<Exam>) => Promise<string>;
   updateExam: (id: string, updates: Partial<Exam>) => Promise<boolean>;
   deleteExam: (id: string) => Promise<boolean>;
-  createVenue: (venue: Partial<Venue>) => Promise<string>;
+  addSupervisor: (supervisor: Partial<Supervisor>) => Promise<string>;
+  updateSupervisor: (id: string, updates: Partial<Supervisor>) => Promise<boolean>;
+  deleteSupervisor: (id: string) => Promise<boolean>;
+  addVenue: (venue: Partial<Venue>) => Promise<string>;
   updateVenue: (id: string, updates: Partial<Venue>) => Promise<boolean>;
+  deleteVenue: (id: string) => Promise<boolean>;
+  generateSchedule: () => Promise<void>;
   setAvailability: (supervisorId: string, availability: Partial<Availability>) => Promise<boolean>;
   autoAssignSupervisors: (examId: string) => Promise<boolean>;
   manualAssignSupervisor: (examId: string, supervisorId: string) => Promise<boolean>;
@@ -134,6 +139,10 @@ export const ESSProvider = ({ children }: { children: ReactNode }) => {
         email: 'smith@university.edu',
         department: 'Computer Science',
         role: 'supervisor',
+        fullName: 'Dr. John Smith',
+        phone: '+1234567890',
+        maxAssignments: 4,
+        status: 'active',
         specializations: ['Programming', 'Algorithms'],
         maxDailyAssignments: 4,
         totalAssignments: 0,
@@ -145,6 +154,10 @@ export const ESSProvider = ({ children }: { children: ReactNode }) => {
         email: 'johnson@university.edu',
         department: 'Mathematics',
         role: 'supervisor',
+        fullName: 'Prof. Sarah Johnson',
+        phone: '+1234567891',
+        maxAssignments: 3,
+        status: 'active',
         specializations: ['Calculus', 'Statistics'],
         maxDailyAssignments: 3,
         totalAssignments: 0,
@@ -156,6 +169,10 @@ export const ESSProvider = ({ children }: { children: ReactNode }) => {
         email: 'williams@university.edu',
         department: 'Physics',
         role: 'supervisor',
+        fullName: 'Dr. Michael Williams',
+        phone: '+1234567892',
+        maxAssignments: 3,
+        status: 'active',
         specializations: ['Mechanics', 'Thermodynamics'],
         maxDailyAssignments: 3,
         totalAssignments: 0,
@@ -168,6 +185,11 @@ export const ESSProvider = ({ children }: { children: ReactNode }) => {
         id: 'venue1',
         name: 'Main Lecture Hall A',
         capacity: 200,
+        building: 'Building A',
+        floor: 'Floor 1',
+        type: 'hall',
+        equipment: 'Projector, Air Conditioning, Sound System',
+        status: 'available',
         location: 'Building A, Floor 1',
         facilities: ['Projector', 'Air Conditioning', 'Sound System'],
         isActive: true
@@ -176,6 +198,11 @@ export const ESSProvider = ({ children }: { children: ReactNode }) => {
         id: 'venue2',
         name: 'Computer Lab 1',
         capacity: 50,
+        building: 'Building B',
+        floor: 'Floor 2',
+        type: 'lab',
+        equipment: 'Computers, Internet, Air Conditioning',
+        status: 'available',
         location: 'Building B, Floor 2',
         facilities: ['Computers', 'Internet', 'Air Conditioning'],
         isActive: true
@@ -184,6 +211,11 @@ export const ESSProvider = ({ children }: { children: ReactNode }) => {
         id: 'venue3',
         name: 'Seminar Room C',
         capacity: 80,
+        building: 'Building C',
+        floor: 'Floor 1',
+        type: 'classroom',
+        equipment: 'Whiteboard, Air Conditioning',
+        status: 'available',
         location: 'Building C, Floor 1',
         facilities: ['Whiteboard', 'Air Conditioning'],
         isActive: true
@@ -280,7 +312,7 @@ export const ESSProvider = ({ children }: { children: ReactNode }) => {
     return true;
   };
 
-  const createExam = async (examData: Partial<Exam>): Promise<string> => {
+  const addExam = async (examData: Partial<Exam>): Promise<string> => {
     if (!examData.courseCode || !examData.date || !examData.startTime || !examData.venueId) {
       toast({ title: "Error", description: "Please fill in all required fields", variant: "destructive" });
       throw new Error("Missing required fields");
@@ -292,18 +324,11 @@ export const ESSProvider = ({ children }: { children: ReactNode }) => {
       id: generateId(),
       courseCode: examData.courseCode,
       courseName: examData.courseName || '',
-      date: new Date(examData.date),
+      date: examData.date,
       startTime: examData.startTime,
       endTime: examData.endTime || '',
-      duration: examData.duration || 120,
       venueId: examData.venueId,
-      venue,
-      expectedStudents: examData.expectedStudents || 0,
-      supervisorsRequired: examData.supervisorsRequired || 2,
-      department: examData.department || '',
-      status: 'scheduled',
-      createdAt: new Date(),
-      updatedAt: new Date()
+      supervisorsNeeded: examData.supervisorsNeeded || 2
     };
 
     setExams(prev => [...prev, newExam]);
@@ -312,16 +337,17 @@ export const ESSProvider = ({ children }: { children: ReactNode }) => {
     return newExam.id;
   };
 
+
   const autoAssignSupervisors = async (examId: string): Promise<boolean> => {
     const exam = exams.find(e => e.id === examId);
     if (!exam) return false;
 
-    const availableSupervisors = supervisors.slice(0, exam.supervisorsRequired);
+    const availableSupervisors = supervisors.slice(0, exam.supervisorsNeeded || 2);
     
-    if (availableSupervisors.length < exam.supervisorsRequired) {
+    if (availableSupervisors.length < (exam.supervisorsNeeded || 2)) {
       toast({
         title: "Assignment Failed",
-        description: `Only ${availableSupervisors.length} of ${exam.supervisorsRequired} supervisors available`,
+        description: `Only ${availableSupervisors.length} of ${exam.supervisorsNeeded || 2} supervisors available`,
         variant: "destructive"
       });
       return false;
@@ -357,17 +383,28 @@ export const ESSProvider = ({ children }: { children: ReactNode }) => {
     return true;
   };
 
-  const createVenue = async (venueData: Partial<Venue>): Promise<string> => {
+  const addVenue = async (venueData: Partial<Venue>): Promise<string> => {
     const newVenue: Venue = {
       id: generateId(),
       name: venueData.name || '',
       capacity: venueData.capacity || 0,
+      building: venueData.building || '',
+      floor: venueData.floor,
+      type: venueData.type,
+      equipment: venueData.equipment,
+      status: venueData.status || 'available',
       location: venueData.location || '',
       facilities: venueData.facilities || [],
       isActive: true
     };
     setVenues(prev => [...prev, newVenue]);
     return newVenue.id;
+  };
+
+
+  const deleteVenue = async (id: string): Promise<boolean> => {
+    setVenues(prev => prev.filter(venue => venue.id !== id));
+    return true;
   };
 
   const updateVenue = async (id: string, updates: Partial<Venue>): Promise<boolean> => {
@@ -430,10 +467,52 @@ export const ESSProvider = ({ children }: { children: ReactNode }) => {
     setLoading(false);
   };
 
+  const addSupervisor = async (supervisorData: Partial<Supervisor>): Promise<string> => {
+    const newSupervisor: Supervisor = {
+      id: generateId(),
+      username: supervisorData.username || '',
+      email: supervisorData.email || '',
+      department: supervisorData.department || '',
+      role: 'supervisor',
+      fullName: supervisorData.fullName || '',
+      phone: supervisorData.phone,
+      maxAssignments: supervisorData.maxAssignments || 5,
+      status: supervisorData.status || 'active',
+      specializations: supervisorData.specializations || [],
+      maxDailyAssignments: supervisorData.maxDailyAssignments || 5,
+      totalAssignments: 0,
+      createdAt: new Date()
+    };
+    setUsers(prev => [...prev, newSupervisor]);
+    return newSupervisor.id;
+  };
+
+  const updateSupervisor = async (id: string, updates: Partial<Supervisor>): Promise<boolean> => {
+    setUsers(prev => prev.map(user => user.id === id ? { ...user, ...updates } : user));
+    return true;
+  };
+
+  const deleteSupervisor = async (id: string): Promise<boolean> => {
+    setUsers(prev => prev.filter(user => user.id !== id));
+    return true;
+  };
+
+  const generateSchedule = async (): Promise<void> => {
+    // Simple auto-assignment logic
+    const unassignedExams = exams.filter(exam => 
+      !schedules.some(schedule => schedule.examId === exam.id)
+    );
+
+    for (const exam of unassignedExams) {
+      await autoAssignSupervisors(exam.id);
+    }
+  };
+
   const contextValue: ESSContextType = {
     currentUser, users, supervisors, exams, venues, availabilities, schedules, 
     conflicts, activityLog, dashboardStats, loading,
-    login, logout, register, createExam, updateExam, deleteExam, createVenue, updateVenue, 
+    login, logout, register, addExam, updateExam, deleteExam, addSupervisor, updateSupervisor, deleteSupervisor,
+    addVenue, updateVenue, deleteVenue, generateSchedule,
     setAvailability, autoAssignSupervisors, manualAssignSupervisor, removeAssignment,
     sendNotifications, refreshData
   };

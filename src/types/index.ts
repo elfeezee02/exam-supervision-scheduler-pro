@@ -11,6 +11,10 @@ export interface User {
 
 export interface Supervisor extends User {
   role: 'supervisor';
+  fullName: string;
+  phone?: string;
+  maxAssignments?: number;
+  status?: 'active' | 'inactive';
   specializations: string[];
   maxDailyAssignments: number;
   totalAssignments: number;
@@ -20,6 +24,11 @@ export interface Venue {
   id: string;
   name: string;
   capacity: number;
+  building: string;
+  floor?: string;
+  type?: 'classroom' | 'hall' | 'lab' | 'auditorium';
+  equipment?: string;
+  status?: 'available' | 'unavailable' | 'maintenance';
   location: string;
   facilities: string[];
   isActive: boolean;
@@ -29,18 +38,19 @@ export interface Exam {
   id: string;
   courseCode: string;
   courseName: string;
-  date: Date;
+  date: string;
   startTime: string;
   endTime: string;
-  duration: number; // in minutes
+  duration?: number; // in minutes
   venueId: string;
   venue?: Venue;
-  expectedStudents: number;
-  supervisorsRequired: number;
-  department: string;
-  status: 'scheduled' | 'ongoing' | 'completed' | 'cancelled';
-  createdAt: Date;
-  updatedAt: Date;
+  expectedStudents?: number;
+  supervisorsNeeded: number;
+  supervisorsRequired?: number;
+  department?: string;
+  status?: 'scheduled' | 'ongoing' | 'completed' | 'cancelled';
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface Availability {
@@ -72,6 +82,9 @@ export interface SupervisionSchedule {
   notificationSent: boolean;
   notes?: string;
 }
+
+// Alias for backward compatibility
+export type Schedule = SupervisionSchedule;
 
 export interface SchedulingConflict {
   type: 'time_conflict' | 'venue_conflict' | 'supervisor_overload';
