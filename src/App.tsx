@@ -7,6 +7,12 @@ import { ESSProvider, useESSS } from "./context/ESSContext";
 import LoginForm from "./components/auth/LoginForm";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import Dashboard from "./pages/Dashboard";
+import Exams from "./pages/Exams";
+import Supervisors from "./pages/Supervisors";
+import Venues from "./pages/Venues";
+import Schedules from "./pages/Schedules";
+import Reports from "./pages/Reports";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +29,12 @@ const AppContent = () => {
       <Route path="/" element={<DashboardLayout />}>
         <Route index element={<Dashboard />} />
         <Route path="dashboard" element={<Dashboard />} />
+        <Route path="exams" element={<Exams />} />
+        <Route path="supervisors" element={<Supervisors />} />
+        <Route path="venues" element={<Venues />} />
+        <Route path="schedules" element={<Schedules />} />
+        <Route path="reports" element={<Reports />} />
+        <Route path="settings" element={<Settings />} />
       </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>
