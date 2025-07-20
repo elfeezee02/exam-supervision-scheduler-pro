@@ -74,15 +74,30 @@ const generateId = () => Math.random().toString(36).substr(2, 9);
 export const ESSProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
   
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [users, setUsers] = useState<User[]>([]);
-  const [exams, setExams] = useState<Exam[]>([]);
-  const [venues, setVenues] = useState<Venue[]>([]);
-  const [availabilities, setAvailabilities] = useState<Availability[]>([]);
-  const [schedules, setSchedules] = useState<SupervisionSchedule[]>([]);
-  const [activityLog, setActivityLog] = useState<ActivityLog[]>([]);
+  const [currentUser, setCurrentUser] = useState<User | null>(() => 
+    loadFromStorage(STORAGE_KEYS.CURRENT_USER, null)
+  );
+  const [users, setUsers] = useState<User[]>(() => 
+    loadFromStorage(STORAGE_KEYS.USERS, [])
+  );
+  const [exams, setExams] = useState<Exam[]>(() => 
+    loadFromStorage(STORAGE_KEYS.EXAMS, [])
+  );
+  const [venues, setVenues] = useState<Venue[]>(() => 
+    loadFromStorage(STORAGE_KEYS.VENUES, [])
+  );
+  const [availabilities, setAvailabilities] = useState<Availability[]>(() => 
+    loadFromStorage(STORAGE_KEYS.AVAILABILITIES, [])
+  );
+  const [schedules, setSchedules] = useState<SupervisionSchedule[]>(() => 
+    loadFromStorage(STORAGE_KEYS.SCHEDULES, [])
+  );
+  const [activityLog, setActivityLog] = useState<ActivityLog[]>(() => 
+    loadFromStorage(STORAGE_KEYS.ACTIVITY_LOG, [])
+  );
   const [conflicts, setConflicts] = useState<SchedulingConflict[]>([]);
   const [loading, setLoading] = useState(false);
+  const [initialized, setInitialized] = useState(false);
 
   const supervisors = users.filter(user => user.role === 'supervisor') as Supervisor[];
   
@@ -104,23 +119,39 @@ export const ESSProvider = ({ children }: { children: ReactNode }) => {
     if (storedUsers.length === 0) {
       initializeSampleData();
     } else {
-      setUsers(storedUsers);
-      setExams(loadFromStorage(STORAGE_KEYS.EXAMS, []));
-      setVenues(loadFromStorage(STORAGE_KEYS.VENUES, []));
-      setAvailabilities(loadFromStorage(STORAGE_KEYS.AVAILABILITIES, []));
-      setSchedules(loadFromStorage(STORAGE_KEYS.SCHEDULES, []));
-      setActivityLog(loadFromStorage(STORAGE_KEYS.ACTIVITY_LOG, []));
-      setCurrentUser(loadFromStorage(STORAGE_KEYS.CURRENT_USER, null));
+      // Data is already loaded from local storage in initial state
+      setInitialized(true);
     }
   }, []);
 
-  useEffect(() => { saveToStorage(STORAGE_KEYS.USERS, users); }, [users]);
-  useEffect(() => { saveToStorage(STORAGE_KEYS.EXAMS, exams); }, [exams]);
-  useEffect(() => { saveToStorage(STORAGE_KEYS.VENUES, venues); }, [venues]);
-  useEffect(() => { saveToStorage(STORAGE_KEYS.AVAILABILITIES, availabilities); }, [availabilities]);
-  useEffect(() => { saveToStorage(STORAGE_KEYS.SCHEDULES, schedules); }, [schedules]);
-  useEffect(() => { saveToStorage(STORAGE_KEYS.ACTIVITY_LOG, activityLog); }, [activityLog]);
-  useEffect(() => { saveToStorage(STORAGE_KEYS.CURRENT_USER, currentUser); }, [currentUser]);
+  useEffect(() => {
+    if (!initialized) return;
+    saveToStorage(STORAGE_KEYS.USERS, users);
+  }, [users, initialized]);
+  useEffect(() => {
+    if (!initialized) return;
+    saveToStorage(STORAGE_KEYS.EXAMS, exams);
+  }, [exams, initialized]);
+  useEffect(() => {
+    if (!initialized) return;
+    saveToStorage(STORAGE_KEYS.VENUES, venues);
+  }, [venues, initialized]);
+  useEffect(() => {
+    if (!initialized) return;
+    saveToStorage(STORAGE_KEYS.AVAILABILITIES, availabilities);
+  }, [availabilities, initialized]);
+  useEffect(() => {
+    if (!initialized) return;
+    saveToStorage(STORAGE_KEYS.SCHEDULES, schedules);
+  }, [schedules, initialized]);
+  useEffect(() => {
+    if (!initialized) return;
+    saveToStorage(STORAGE_KEYS.ACTIVITY_LOG, activityLog);
+  }, [activityLog, initialized]);
+  useEffect(() => {
+    if (!initialized) return;
+    saveToStorage(STORAGE_KEYS.CURRENT_USER, currentUser);
+  }, [currentUser, initialized]);
 
   const initializeSampleData = () => {
     const sampleAdmin: User = {
@@ -225,6 +256,7 @@ export const ESSProvider = ({ children }: { children: ReactNode }) => {
     const allUsers = [sampleAdmin, ...sampleSupervisors];
     setUsers(allUsers);
     setVenues(sampleVenues);
+    setInitialized(true);
     
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);

@@ -96,6 +96,7 @@ const Supervisors = () => {
   };
 
   const getInitials = (name: string) => {
+    if (!name || typeof name !== 'string') return 'U';
     return name.split(' ').map(word => word.charAt(0)).join('').toUpperCase();
   };
 
