@@ -54,7 +54,10 @@ export const useVenues = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
 
       setVenues(prev => [...prev, data as Venue]);
       toast({
@@ -66,7 +69,7 @@ export const useVenues = () => {
       console.error('Error creating venue:', error);
       toast({
         title: "Error",
-        description: "Failed to create venue",
+        description: `Failed to create venue: ${error.message || 'Unknown error'}`,
         variant: "destructive"
       });
       throw error;

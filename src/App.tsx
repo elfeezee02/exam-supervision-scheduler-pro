@@ -35,6 +35,11 @@ const AppContent = () => {
         <Route path="schedules" element={<Schedules />} />
         <Route path="reports" element={<Reports />} />
         <Route path="settings" element={<Settings />} />
+        {/* Supervisor-specific routes */}
+        <Route path="my-assignments" element={<Dashboard />} />
+        <Route path="availability" element={<Dashboard />} />
+        <Route path="notifications" element={<Dashboard />} />
+        <Route path="profile" element={<Settings />} />
       </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>
