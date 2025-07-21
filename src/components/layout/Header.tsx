@@ -32,7 +32,7 @@ const Header = () => {
         <Button
           variant="outline"
           size="sm"
-          onClick={logout}
+          onClick={() => logout()}
           className="btn-secondary-academic"
         >
           <LogOut className="h-4 w-4 mr-2" />

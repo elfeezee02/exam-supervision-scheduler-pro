@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, Supervisor, Exam, Venue, Availability, SupervisionSchedule, Schedule, DashboardStats, ActivityLog, SchedulingConflict } from '@/types';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ESSContextType {
   currentUser: User | null;
@@ -16,7 +17,7 @@ interface ESSContextType {
   loading: boolean;
 
   login: (username: string, password: string) => Promise<boolean>;
-  logout: () => void;
+  logout: () => Promise<void>;
   register: (userData: Partial<User>) => Promise<boolean>;
   addExam: (exam: Partial<Exam>) => Promise<string>;
   updateExam: (id: string, updates: Partial<Exam>) => Promise<boolean>;
@@ -292,27 +293,76 @@ export const ESSProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (username: string, password: string): Promise<boolean> => {
     setLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
     
-    const user = users.find(u => u.username === username);
-    
-    if (user && password === 'password') {
-      setCurrentUser(user);
-      addActivityLog('Login', `User ${username} logged in`, 'update');
-      toast({ title: "Login Successful", description: `Welcome back, ${user.username}!` });
+    try {
+      // Try to sign in with Supabase auth (using email as username for supervisors)
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: username,
+        password: password,
+      });
+
+      if (error) {
+        // If Supabase auth fails, check hardcoded admin account for backward compatibility
+        const adminUser = users.find(u => u.username === username && u.role === 'admin');
+        
+        if (adminUser && password === 'password') {
+          setCurrentUser(adminUser);
+          addActivityLog('Login', `Admin ${username} logged in`, 'update');
+          toast({ title: "Login Successful", description: `Welcome back, ${adminUser.username}!` });
+          setLoading(false);
+          return true;
+        }
+
+        throw error;
+      }
+
+      if (data.user) {
+        // Fetch user profile from Supabase
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('user_id', data.user.id)
+          .single();
+
+        if (profileError) throw profileError;
+
+        // Create user object compatible with existing system
+        const user: User = {
+          id: data.user.id,
+          username: data.user.email || username,
+          email: data.user.email || '',
+          department: profile.department,
+          role: profile.role as 'admin' | 'supervisor',
+          createdAt: new Date(data.user.created_at)
+        };
+
+        setCurrentUser(user);
+        addActivityLog('Login', `User ${username} logged in`, 'update');
+        toast({ title: "Login Successful", description: `Welcome back, ${profile.full_name || username}!` });
+        setLoading(false);
+        return true;
+      }
+
+      throw new Error('Authentication failed');
+    } catch (error: any) {
+      console.error('Login error:', error);
+      toast({ 
+        title: "Login Failed", 
+        description: error.message || "Invalid username or password", 
+        variant: "destructive" 
+      });
       setLoading(false);
-      return true;
+      return false;
     }
-    
-    toast({ title: "Login Failed", description: "Invalid username or password", variant: "destructive" });
-    setLoading(false);
-    return false;
   };
 
-  const logout = () => {
+  const logout = async () => {
     if (currentUser) {
       addActivityLog('Logout', `User ${currentUser.username} logged out`, 'update');
     }
+    
+    // Sign out from Supabase
+    await supabase.auth.signOut();
     setCurrentUser(null);
     toast({ title: "Logged Out", description: "You have been successfully logged out" });
   };
