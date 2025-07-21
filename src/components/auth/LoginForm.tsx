@@ -99,13 +99,6 @@ const LoginForm = () => {
                 </Button>
               </form>
 
-              <div className="mt-6 p-4 bg-muted rounded-lg">
-                <p className="text-sm font-medium mb-2">Demo Credentials:</p>
-                <div className="space-y-1 text-sm text-muted-foreground">
-                  <p><strong>Admin:</strong> admin / password</p>
-                  <p><strong>Supervisor:</strong> dr.smith / password</p>
-                </div>
-              </div>
             </CardContent>
           </Card>
         </div>
