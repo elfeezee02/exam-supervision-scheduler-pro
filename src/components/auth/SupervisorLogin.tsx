@@ -1,19 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Users, GraduationCap } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useESSS } from '@/context/ESSContext';
 
 const SupervisorLogin = () => {
   const [loginData, setLoginData] = useState({ email: '', password: '' });
-  const { loginSupervisor, loading } = useESSS();
+  const { loginSupervisor, loading, currentUser } = useESSS();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (currentUser) {
+      navigate('/dashboard');
+    }
+  }, [currentUser, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    await loginSupervisor(loginData.email, loginData.password);
+    const success = await loginSupervisor(loginData.email, loginData.password);
+    if (success) {
+      navigate('/dashboard');
+    }
   };
 
   return (

@@ -22,34 +22,41 @@ const queryClient = new QueryClient();
 const AppContent = () => {
   const { currentUser } = useESSS();
   
-  if (!currentUser) {
-    return (
-      <Routes>
-        <Route path="/admin-login" element={<AdminLogin />} />
-        <Route path="/supervisor-login" element={<SupervisorLogin />} />
-        <Route path="*" element={<LoginSelection />} />
-      </Routes>
-    );
-  }
-
   return (
     <Routes>
-      <Route path="/" element={<DashboardLayout />}>
-        <Route index element={<Dashboard />} />
-        <Route path="dashboard" element={<Dashboard />} />
-        <Route path="exams" element={<Exams />} />
-        <Route path="supervisors" element={<Supervisors />} />
-        <Route path="venues" element={<Venues />} />
-        <Route path="schedules" element={<Schedules />} />
-        <Route path="reports" element={<Reports />} />
-        <Route path="settings" element={<Settings />} />
-        {/* Supervisor-specific routes */}
-        <Route path="my-assignments" element={<Dashboard />} />
-        <Route path="availability" element={<Dashboard />} />
-        <Route path="notifications" element={<Dashboard />} />
-        <Route path="profile" element={<Settings />} />
-      </Route>
-      <Route path="*" element={<NotFound />} />
+      {/* Authentication routes - always available */}
+      <Route path="/admin-login" element={!currentUser ? <AdminLogin /> : <Dashboard />} />
+      <Route path="/supervisor-login" element={!currentUser ? <SupervisorLogin /> : <Dashboard />} />
+      
+      {/* Protected routes - only when logged in */}
+      {currentUser ? (
+        <>
+          <Route path="/" element={<DashboardLayout />}>
+            <Route index element={<Dashboard />} />
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="exams" element={<Exams />} />
+            <Route path="supervisors" element={<Supervisors />} />
+            <Route path="venues" element={<Venues />} />
+            <Route path="schedules" element={<Schedules />} />
+            <Route path="reports" element={<Reports />} />
+            <Route path="settings" element={<Settings />} />
+            {/* Supervisor-specific routes */}
+            <Route path="my-assignments" element={<Dashboard />} />
+            <Route path="availability" element={<Dashboard />} />
+            <Route path="notifications" element={<Dashboard />} />
+            <Route path="profile" element={<Settings />} />
+          </Route>
+        </>
+      ) : (
+        <>
+          {/* Redirect all other routes to login selection when not logged in */}
+          <Route path="/" element={<LoginSelection />} />
+          <Route path="*" element={<LoginSelection />} />
+        </>
+      )}
+      
+      {/* 404 route for logged in users */}
+      {currentUser && <Route path="*" element={<NotFound />} />}
     </Routes>
   );
 };
