@@ -4,7 +4,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ESSProvider, useESSS } from "./context/ESSContext";
-import LoginForm from "./components/auth/LoginForm";
+import LoginSelection from "./pages/LoginSelection";
+import AdminLogin from "./components/auth/AdminLogin";
+import SupervisorLogin from "./components/auth/SupervisorLogin";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import Dashboard from "./pages/Dashboard";
 import Exams from "./pages/Exams";
@@ -20,27 +22,34 @@ const queryClient = new QueryClient();
 const AppContent = () => {
   const { currentUser } = useESSS();
   
-  if (!currentUser) {
-    return <LoginForm />;
-  }
-
   return (
     <Routes>
-      <Route path="/" element={<DashboardLayout />}>
-        <Route index element={<Dashboard />} />
-        <Route path="dashboard" element={<Dashboard />} />
-        <Route path="exams" element={<Exams />} />
-        <Route path="supervisors" element={<Supervisors />} />
-        <Route path="venues" element={<Venues />} />
-        <Route path="schedules" element={<Schedules />} />
-        <Route path="reports" element={<Reports />} />
-        <Route path="settings" element={<Settings />} />
-        {/* Supervisor-specific routes */}
-        <Route path="my-assignments" element={<Dashboard />} />
-        <Route path="availability" element={<Dashboard />} />
-        <Route path="notifications" element={<Dashboard />} />
-        <Route path="profile" element={<Settings />} />
-      </Route>
+      {/* Authentication routes */}
+      <Route path="/login" element={!currentUser ? <LoginSelection /> : <DashboardLayout />} />
+      <Route path="/admin-login" element={!currentUser ? <AdminLogin /> : <DashboardLayout />} />
+      <Route path="/supervisor-login" element={!currentUser ? <SupervisorLogin /> : <DashboardLayout />} />
+      
+      {/* Protected routes */}
+      {currentUser ? (
+        <Route path="/" element={<DashboardLayout />}>
+          <Route index element={<Dashboard />} />
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="exams" element={<Exams />} />
+          <Route path="supervisors" element={<Supervisors />} />
+          <Route path="venues" element={<Venues />} />
+          <Route path="schedules" element={<Schedules />} />
+          <Route path="reports" element={<Reports />} />
+          <Route path="settings" element={<Settings />} />
+          {/* Supervisor-specific routes */}
+          <Route path="my-assignments" element={<Dashboard />} />
+          <Route path="availability" element={<Dashboard />} />
+          <Route path="notifications" element={<Dashboard />} />
+          <Route path="profile" element={<Settings />} />
+        </Route>
+      ) : (
+        <Route path="/" element={<LoginSelection />} />
+      )}
+      
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

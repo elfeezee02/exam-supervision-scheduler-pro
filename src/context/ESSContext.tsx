@@ -17,6 +17,8 @@ interface ESSContextType {
   loading: boolean;
 
   login: (username: string, password: string) => Promise<boolean>;
+  loginAdmin: (username: string, password: string) => Promise<boolean>;
+  loginSupervisor: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   register: (userData: Partial<User>) => Promise<boolean>;
   addExam: (exam: Partial<Exam>) => Promise<string>;
@@ -356,6 +358,100 @@ export const ESSProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const loginAdmin = async (username: string, password: string): Promise<boolean> => {
+    setLoading(true);
+    
+    try {
+      // Check hardcoded admin account first
+      const adminUser = users.find(u => u.username === username && u.role === 'admin');
+      
+      if (adminUser && password === 'password') {
+        setCurrentUser(adminUser);
+        addActivityLog('Login', `Admin ${username} logged in`, 'update');
+        toast({ title: "Login Successful", description: `Welcome back, ${adminUser.username}!` });
+        setLoading(false);
+        return true;
+      }
+
+      toast({ 
+        title: "Login Failed", 
+        description: "Invalid admin credentials", 
+        variant: "destructive" 
+      });
+      setLoading(false);
+      return false;
+    } catch (error: any) {
+      console.error('Admin login error:', error);
+      toast({ 
+        title: "Login Failed", 
+        description: error.message || "Invalid username or password", 
+        variant: "destructive" 
+      });
+      setLoading(false);
+      return false;
+    }
+  };
+
+  const loginSupervisor = async (email: string, password: string): Promise<boolean> => {
+    setLoading(true);
+    
+    try {
+      // Try to sign in with Supabase auth
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: password,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data.user) {
+        // Fetch user profile from Supabase
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('user_id', data.user.id)
+          .single();
+
+        if (profileError) throw profileError;
+
+        // Ensure this is a supervisor
+        if (profile.role !== 'supervisor') {
+          await supabase.auth.signOut();
+          throw new Error('This account is not a supervisor account');
+        }
+
+        // Create user object compatible with existing system
+        const user: User = {
+          id: data.user.id,
+          username: data.user.email || email,
+          email: data.user.email || '',
+          department: profile.department,
+          role: profile.role as 'admin' | 'supervisor',
+          createdAt: new Date(data.user.created_at)
+        };
+
+        setCurrentUser(user);
+        addActivityLog('Login', `Supervisor ${email} logged in`, 'update');
+        toast({ title: "Login Successful", description: `Welcome back, ${profile.full_name || email}!` });
+        setLoading(false);
+        return true;
+      }
+
+      throw new Error('Authentication failed');
+    } catch (error: any) {
+      console.error('Supervisor login error:', error);
+      toast({ 
+        title: "Login Failed", 
+        description: error.message || "Invalid email or password", 
+        variant: "destructive" 
+      });
+      setLoading(false);
+      return false;
+    }
+  };
+
   const logout = async () => {
     if (currentUser) {
       addActivityLog('Logout', `User ${currentUser.username} logged out`, 'update');
@@ -593,7 +689,7 @@ export const ESSProvider = ({ children }: { children: ReactNode }) => {
   const contextValue: ESSContextType = {
     currentUser, users, supervisors, exams, venues, availabilities, schedules, 
     conflicts, activityLog, dashboardStats, loading,
-    login, logout, register, addExam, updateExam, deleteExam, addSupervisor, updateSupervisor, deleteSupervisor,
+    login, loginAdmin, loginSupervisor, logout, register, addExam, updateExam, deleteExam, addSupervisor, updateSupervisor, deleteSupervisor,
     addVenue, updateVenue, deleteVenue, generateSchedule,
     setAvailability, autoAssignSupervisors, manualAssignSupervisor, removeAssignment,
     sendNotifications, refreshData
