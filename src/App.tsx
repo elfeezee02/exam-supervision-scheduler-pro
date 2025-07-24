@@ -22,34 +22,33 @@ const queryClient = new QueryClient();
 const AppContent = () => {
   const { currentUser } = useESSS();
   
+  if (!currentUser) {
+    return (
+      <Routes>
+        <Route path="/admin-login" element={<AdminLogin />} />
+        <Route path="/supervisor-login" element={<SupervisorLogin />} />
+        <Route path="*" element={<LoginSelection />} />
+      </Routes>
+    );
+  }
+
   return (
     <Routes>
-      {/* Authentication routes */}
-      <Route path="/login" element={!currentUser ? <LoginSelection /> : <DashboardLayout />} />
-      <Route path="/admin-login" element={!currentUser ? <AdminLogin /> : <DashboardLayout />} />
-      <Route path="/supervisor-login" element={!currentUser ? <SupervisorLogin /> : <DashboardLayout />} />
-      
-      {/* Protected routes */}
-      {currentUser ? (
-        <Route path="/" element={<DashboardLayout />}>
-          <Route index element={<Dashboard />} />
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="exams" element={<Exams />} />
-          <Route path="supervisors" element={<Supervisors />} />
-          <Route path="venues" element={<Venues />} />
-          <Route path="schedules" element={<Schedules />} />
-          <Route path="reports" element={<Reports />} />
-          <Route path="settings" element={<Settings />} />
-          {/* Supervisor-specific routes */}
-          <Route path="my-assignments" element={<Dashboard />} />
-          <Route path="availability" element={<Dashboard />} />
-          <Route path="notifications" element={<Dashboard />} />
-          <Route path="profile" element={<Settings />} />
-        </Route>
-      ) : (
-        <Route path="/" element={<LoginSelection />} />
-      )}
-      
+      <Route path="/" element={<DashboardLayout />}>
+        <Route index element={<Dashboard />} />
+        <Route path="dashboard" element={<Dashboard />} />
+        <Route path="exams" element={<Exams />} />
+        <Route path="supervisors" element={<Supervisors />} />
+        <Route path="venues" element={<Venues />} />
+        <Route path="schedules" element={<Schedules />} />
+        <Route path="reports" element={<Reports />} />
+        <Route path="settings" element={<Settings />} />
+        {/* Supervisor-specific routes */}
+        <Route path="my-assignments" element={<Dashboard />} />
+        <Route path="availability" element={<Dashboard />} />
+        <Route path="notifications" element={<Dashboard />} />
+        <Route path="profile" element={<Settings />} />
+      </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
