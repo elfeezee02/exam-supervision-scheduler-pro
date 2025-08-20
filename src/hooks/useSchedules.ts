@@ -244,7 +244,7 @@ export const useSchedules = () => {
       console.error('Error generating schedule:', error);
       toast({
         title: "Error",
-        description: "Failed to generate schedule",
+        description: `Failed to generate schedule: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: "destructive"
       });
     } finally {
