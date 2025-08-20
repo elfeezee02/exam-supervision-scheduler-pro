@@ -4,11 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Play, Calendar } from 'lucide-react';
+import { Play, Calendar, Trash2, Printer } from 'lucide-react';
 
 const Schedules = () => {
-  const { schedules, generateSchedule, loading } = useSchedules();
+  const { schedules, generateSchedule, deleteSchedule, loading } = useSchedules();
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleGenerateSchedule = async () => {
     try {
@@ -19,14 +20,52 @@ const Schedules = () => {
     }
   };
 
+  const handleDeleteAllSchedules = async () => {
+    if (!window.confirm('Are you sure you want to delete all schedules?')) {
+      return;
+    }
+    
+    try {
+      setIsDeleting(true);
+      // Delete all schedules one by one
+      for (const schedule of schedules) {
+        await deleteSchedule(schedule.id);
+      }
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handlePrintSchedule = () => {
+    window.print();
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Schedules</h1>
-        <Button onClick={handleGenerateSchedule} disabled={isGenerating}>
-          <Play className="h-4 w-4 mr-2" />
-          {isGenerating ? 'Generating...' : 'Generate Schedule'}
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={handlePrintSchedule} 
+            variant="outline"
+            disabled={schedules.length === 0}
+          >
+            <Printer className="h-4 w-4 mr-2" />
+            Print
+          </Button>
+          <Button 
+            onClick={handleDeleteAllSchedules} 
+            variant="destructive"
+            disabled={schedules.length === 0 || isDeleting}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            {isDeleting ? 'Deleting...' : 'Delete All'}
+          </Button>
+          <Button onClick={handleGenerateSchedule} disabled={isGenerating}>
+            <Play className="h-4 w-4 mr-2" />
+            {isGenerating ? 'Generating...' : 'Generate Schedule'}
+          </Button>
+        </div>
       </div>
 
       <Card>
