@@ -188,12 +188,21 @@ export function useSupervisors() {
       const supervisor = supervisors.find(s => s.id === id);
       if (!supervisor) throw new Error('Supervisor not found');
 
-      // Delete the auth user (this will cascade to profiles and supervisors)
-      const { error: authError } = await supabase.auth.admin.deleteUser(
-        supervisor.user_id
-      );
+      // First delete related data in supervisors table
+      const { error: supervisorError } = await supabase
+        .from('supervisors')
+        .delete()
+        .eq('id', id);
 
-      if (authError) throw authError;
+      if (supervisorError) throw supervisorError;
+
+      // Delete from profiles table
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('user_id', supervisor.user_id);
+
+      if (profileError) throw profileError;
 
       toast({
         title: "Success",

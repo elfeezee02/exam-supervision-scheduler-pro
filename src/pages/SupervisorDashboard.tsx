@@ -77,7 +77,10 @@ const SupervisorDashboard = () => {
               <Printer className="h-4 w-4 mr-2" />
               Print Schedule
             </Button>
-            <Button onClick={signOut} variant="outline">
+            <Button onClick={() => {
+              signOut();
+              window.location.href = '/';
+            }} variant="outline">
               <LogOut className="h-4 w-4 mr-2" />
               Sign Out
             </Button>
