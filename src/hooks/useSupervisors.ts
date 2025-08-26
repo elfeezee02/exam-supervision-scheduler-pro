@@ -188,7 +188,18 @@ export function useSupervisors() {
       const supervisor = supervisors.find(s => s.id === id);
       if (!supervisor) throw new Error('Supervisor not found');
 
-      // First delete related data in supervisors table
+      // First delete schedules related to this supervisor
+      const { error: schedulesError } = await supabase
+        .from('schedules')
+        .delete()
+        .eq('supervisor_id', id);
+
+      if (schedulesError) {
+        console.warn('Error deleting schedules:', schedulesError);
+        // Don't throw error for schedules as they might not exist
+      }
+
+      // Delete from supervisors table
       const { error: supervisorError } = await supabase
         .from('supervisors')
         .delete()
@@ -204,12 +215,27 @@ export function useSupervisors() {
 
       if (profileError) throw profileError;
 
+      // Delete the auth user last (this should cascade properly)
+      const { error: authError } = await supabase.auth.admin.deleteUser(
+        supervisor.user_id
+      );
+
+      if (authError) {
+        console.warn('Error deleting auth user:', authError);
+        // Don't throw error as the main data is already deleted
+      }
+
+      // Update local state immediately
+      setSupervisors(prevSupervisors => 
+        prevSupervisors.filter(s => s.id !== id)
+      );
+
       toast({
         title: "Success",
         description: "Supervisor deleted successfully",
       });
 
-      // Refresh supervisors list
+      // Refresh supervisors list to ensure consistency
       fetchSupervisors();
       
       return { success: true };
