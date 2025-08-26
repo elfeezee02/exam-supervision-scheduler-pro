@@ -2,11 +2,13 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ESSProvider, useESSS } from "./context/ESSContext";
+import { useAuth } from "@/hooks/useAuth";
 import LoginSelection from "./pages/LoginSelection";
 import AdminLogin from "./components/auth/AdminLogin";
 import SupervisorLogin from "./components/auth/SupervisorLogin";
+import SupervisorDashboard from "./pages/SupervisorDashboard";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import Dashboard from "./pages/Dashboard";
 import Exams from "./pages/Exams";
@@ -21,15 +23,33 @@ const queryClient = new QueryClient();
 
 const AppContent = () => {
   const { currentUser } = useESSS();
-  
+  const { authUser, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
     <Routes>
-      {/* Authentication routes - always available */}
-      <Route path="/admin-login" element={!currentUser ? <AdminLogin /> : <Dashboard />} />
-      <Route path="/supervisor-login" element={!currentUser ? <SupervisorLogin /> : <Dashboard />} />
-      
-      {/* Protected routes - only when logged in */}
-      {currentUser ? (
+      {!authUser && !currentUser ? (
+        <>
+          <Route path="/" element={<LoginSelection />} />
+          <Route path="/admin-login" element={<AdminLogin />} />
+          <Route path="/supervisor-login" element={<SupervisorLogin />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </>
+      ) : authUser?.role === 'supervisor' ? (
+        <>
+          <Route path="/" element={<Navigate to="/supervisor-dashboard" replace />} />
+          <Route path="/supervisor-dashboard" element={<SupervisorDashboard />} />
+          <Route path="/supervisor-login" element={<Navigate to="/supervisor-dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/supervisor-dashboard" replace />} />
+        </>
+      ) : (
         <>
           <Route path="/" element={<DashboardLayout />}>
             <Route index element={<Dashboard />} />
@@ -40,23 +60,10 @@ const AppContent = () => {
             <Route path="schedules" element={<Schedules />} />
             <Route path="reports" element={<Reports />} />
             <Route path="settings" element={<Settings />} />
-            {/* Supervisor-specific routes */}
-            <Route path="my-assignments" element={<Dashboard />} />
-            <Route path="availability" element={<Dashboard />} />
-            <Route path="notifications" element={<Dashboard />} />
-            <Route path="profile" element={<Settings />} />
           </Route>
-        </>
-      ) : (
-        <>
-          {/* Redirect all other routes to login selection when not logged in */}
-          <Route path="/" element={<LoginSelection />} />
-          <Route path="*" element={<LoginSelection />} />
+          <Route path="*" element={<NotFound />} />
         </>
       )}
-      
-      {/* 404 route for logged in users */}
-      {currentUser && <Route path="*" element={<NotFound />} />}
     </Routes>
   );
 };

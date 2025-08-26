@@ -5,24 +5,24 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Users, GraduationCap } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useESSS } from '@/context/ESSContext';
+import { useAuth } from '@/hooks/useAuth';
 
 const SupervisorLogin = () => {
   const [loginData, setLoginData] = useState({ email: '', password: '' });
-  const { loginSupervisor, loading, currentUser } = useESSS();
+  const { signIn, authUser, loading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (currentUser) {
-      navigate('/dashboard');
+    if (authUser && authUser.role === 'supervisor') {
+      navigate('/supervisor-dashboard');
     }
-  }, [currentUser, navigate]);
+  }, [authUser, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const success = await loginSupervisor(loginData.email, loginData.password);
+    const success = await signIn(loginData.email, loginData.password);
     if (success) {
-      navigate('/dashboard');
+      // Navigation will be handled by useEffect when authUser updates
     }
   };
 
